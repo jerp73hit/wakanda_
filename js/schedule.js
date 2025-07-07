@@ -1,5 +1,5 @@
 //const activationTime = "2025-07-08T20:00:00";
-const activationTime = "2025-07-07T02:55:00";
+const activationTime = "2025-07-07T02:59:00";
 
 document.addEventListener("DOMContentLoaded", () => {
   const now = new Date();
