@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Acceso Cliente</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/auth.js" defer></script>
+</head>
+<body>
+  <h2>Acceso al portal</h2>
+  <form id="loginForm">
+    <label for="cliente">Selecciona tu nombre:</label>
+    <select id="cliente" name="cliente">
+      <option value="cliente1">Cliente 1</option>
+      <option value="cliente2">Cliente 2</option>
+      <option value="cliente3">Cliente 3</option>
+      <option value="cliente4">Cliente 4</option>
+      <option value="cliente5">Cliente 5</option>
+    </select><br><br>
+    <label for="pass">Contraseña:</label>
+    <input type="password" id="pass" maxlength="4"><br><br>
+    <button type="submit">Ingresar</button>
+  </form>
+  <p id="mensaje"></p>
+</body>
+</html>

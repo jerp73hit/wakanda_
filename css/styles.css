@@ -1,0 +1,13 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 50px;
+  background-color: #f3f3f3;
+}
+
+form, #contenedorQR {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  display: inline-block;
+}
