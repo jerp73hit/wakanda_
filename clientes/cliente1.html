@@ -15,62 +15,54 @@
     <p id="espera">Tu QR estará disponible a la hora establecida.</p>
   </div>
 
-  <script>
-    async function desencriptarImagen(nombreArchivo, clave) {
-      const res = await fetch(nombreArchivo);
-      const encryptedText = await res.text();
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script>
+  async function desencriptarImagen(nombreArchivo, clave) {
+  const res = await fetch(nombreArchivo);
+  const encryptedText = await res.text();
 
-      try {
-        const rawData = CryptoJS.enc.Base64.parse(encryptedText);
-        const salt = CryptoJS.lib.WordArray.create(rawData.words.slice(0, 4));     // 16 bytes
-        const nonce = CryptoJS.lib.WordArray.create(rawData.words.slice(4, 8));    // 16 bytes
-        const tag = CryptoJS.lib.WordArray.create(rawData.words.slice(8, 12));     // 16 bytes
-        const ciphertext = CryptoJS.lib.WordArray.create(rawData.words.slice(12)); // resto
+  try {
+    const rawData = CryptoJS.enc.Base64.parse(encryptedText);
+    const rawWords = rawData.words;
 
-        const key = CryptoJS.PBKDF2(clave, salt, {
-          keySize: 256 / 32,
-          iterations: 100000
-        });
+    const salt = CryptoJS.lib.WordArray.create(rawWords.slice(0, 4));     // 16 bytes
+    const nonce = CryptoJS.lib.WordArray.create(rawWords.slice(4, 8));    // 16 bytes
+    const tag = CryptoJS.lib.WordArray.create(rawWords.slice(8, 12));     // 16 bytes
+    const ciphertext = CryptoJS.lib.WordArray.create(rawWords.slice(12)); // resto
 
-        const decrypted = CryptoJS.AES.decrypt(
-          { ciphertext: ciphertext },
-          key,
-          { mode: CryptoJS.mode.GCM, iv: nonce, tag: tag }
-        );
-
-        const base64Image = decrypted.toString(CryptoJS.enc.Utf8);
-        if (!base64Image) throw new Error("Falló la desencriptación");
-
-        const img = document.createElement("img");
-        img.src = "data:image/png;base64," + base64Image;
-        img.alt = "QR seguro";
-        img.style.maxWidth = "300px";
-
-        const contenedor = document.getElementById("contenedorQR");
-        contenedor.innerHTML = "";
-        contenedor.appendChild(img);
-
-      } catch (e) {
-        alert("Error: clave incorrecta o archivo no válido.");
-      }
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const now = new Date();
-      const activation = new Date("2025-07-08T19:27:00"); // Ajusta esta hora según tu necesidad
-
-      const contenedor = document.getElementById("contenedorQR");
-      const espera = document.getElementById("espera");
-
-      if (now >= activation) {
-        const clave = prompt("Ingresa tu código de acceso:");
-        if (clave) {
-          desencriptarImagen("../qrs/chart.enc", clave);
-        }
-      } else {
-        contenedor.innerHTML = "<p id='espera'>Tu QR estará disponible a la hora establecida.</p>";
-      }
+    const key = CryptoJS.PBKDF2(clave, salt, {
+      keySize: 256 / 32,
+      iterations: 100000
     });
-  </script>
+
+    // Re-armamos el bloque cifrado con tag al final como lo requiere GCM en CryptoJS
+    const fullCipher = ciphertext.clone();
+    fullCipher.concat(tag);
+
+    const decrypted = CryptoJS.AES.decrypt(
+      { ciphertext: fullCipher },
+      key,
+      { mode: CryptoJS.mode.GCM, iv: nonce }
+    );
+
+    const base64Image = decrypted.toString(CryptoJS.enc.Utf8);
+    if (!base64Image) throw new Error("Desencriptación fallida");
+
+    const img = document.createElement("img");
+    img.src = "data:image/png;base64," + base64Image;
+    img.alt = "QR seguro";
+    img.style.maxWidth = "300px";
+
+    const contenedor = document.getElementById("contenedorQR");
+    contenedor.innerHTML = "";
+    contenedor.appendChild(img);
+
+  } catch (e) {
+    alert("Error: clave incorrecta o archivo no válido.");
+    console.error(e);
+  }
+}
+</script>
+
 </body>
 </html>
