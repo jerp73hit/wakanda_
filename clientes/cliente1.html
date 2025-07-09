@@ -6,12 +6,71 @@
   <link rel="stylesheet" href="../css/styles.css">
   <script src="../js/schedule.js" defer></script>
   <script src="../js/protect.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
   <h2>Tu código QR</h2>
+
   <div id="contenedorQR">
-    <img id="qr" src="../qrs/qr-cliente1.png" alt="QR Cliente 1" style="display:none;" />
     <p id="espera">Tu QR estará disponible a la hora establecida.</p>
   </div>
+
+  <script>
+    async function desencriptarImagen(nombreArchivo, clave) {
+      const res = await fetch(nombreArchivo);
+      const encryptedText = await res.text();
+
+      try {
+        const rawData = CryptoJS.enc.Base64.parse(encryptedText);
+        const salt = CryptoJS.lib.WordArray.create(rawData.words.slice(0, 4));     // 16 bytes
+        const nonce = CryptoJS.lib.WordArray.create(rawData.words.slice(4, 8));    // 16 bytes
+        const tag = CryptoJS.lib.WordArray.create(rawData.words.slice(8, 12));     // 16 bytes
+        const ciphertext = CryptoJS.lib.WordArray.create(rawData.words.slice(12)); // resto
+
+        const key = CryptoJS.PBKDF2(clave, salt, {
+          keySize: 256 / 32,
+          iterations: 100000
+        });
+
+        const decrypted = CryptoJS.AES.decrypt(
+          { ciphertext: ciphertext },
+          key,
+          { mode: CryptoJS.mode.GCM, iv: nonce, tag: tag }
+        );
+
+        const base64Image = decrypted.toString(CryptoJS.enc.Utf8);
+        if (!base64Image) throw new Error("Falló la desencriptación");
+
+        const img = document.createElement("img");
+        img.src = "data:image/png;base64," + base64Image;
+        img.alt = "QR seguro";
+        img.style.maxWidth = "300px";
+
+        const contenedor = document.getElementById("contenedorQR");
+        contenedor.innerHTML = "";
+        contenedor.appendChild(img);
+
+      } catch (e) {
+        alert("Error: clave incorrecta o archivo no válido.");
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const now = new Date();
+      const activation = new Date("2025-07-07T03:32:00"); // Ajusta esta hora según tu necesidad
+
+      const contenedor = document.getElementById("contenedorQR");
+      const espera = document.getElementById("espera");
+
+      if (now >= activation) {
+        const clave = prompt("Ingresa tu código de acceso:");
+        if (clave) {
+          desencriptarImagen("../qrs/chart.enc", clave);
+        }
+      } else {
+        contenedor.innerHTML = "<p id='espera'>Tu QR estará disponible a la hora establecida.</p>";
+      }
+    });
+  </script>
 </body>
 </html>
